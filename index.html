@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Book Log</title>
+
+  <!-- iOS Standalone PWA Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Book Log">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3389/3389081.png">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col justify-between p-5 pt-12 pb-10">
+
+  <!-- Header -->
+  <header class="max-w-md w-full mx-auto mb-6 flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-slate-900">📚 Book Log</h1>
+      <p class="text-xs text-slate-500 mt-1">Paste a bookstore URL to automatically archive book info.</p>
+    </div>
+    <button id="openSettingsBtn" class="p-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 shadow-sm active:scale-95 transition" title="Settings">
+      ⚙️
+    </button>
+  </header>
+
+  <!-- Main Form -->
+  <main class="max-w-md w-full mx-auto bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex-1">
+    <form id="bookForm" class="space-y-5">
+
+      <!-- Reading Date Input -->
+      <div>
+        <label for="readDate" class="block text-sm font-semibold text-slate-700 mb-1">Finished Date</label>
+        <input 
+          type="date" 
+          id="readDate" 
+          required 
+          class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm transition bg-white"
+        >
+      </div>
+
+      <!-- Bookstore URL -->
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <label for="url" class="block text-sm font-semibold text-slate-700">Bookstore URL</label>
+          <button type="button" id="pasteBtn" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">
+            📋 Paste Clipboard
+          </button>
+        </div>
+        <input 
+          type="url" 
+          id="url" 
+          required 
+          placeholder="https://www.aladin.co.kr/shop/wproduct.aspx?ItemId=..."
+          class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm transition"
+        >
+      </div>
+
+      <!-- Memorable Quote -->
+      <div>
+        <label for="quote" class="block text-sm font-semibold text-slate-700 mb-1">Memorable Quote</label>
+        <textarea 
+          id="quote" 
+          rows="3" 
+          placeholder="A passage or sentence that resonated with you."
+          class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm transition resize-none"
+        ></textarea>
+      </div>
+
+      <!-- Takeaways & Reflections -->
+      <div>
+        <label for="review" class="block text-sm font-semibold text-slate-700 mb-1">Takeaways & Reflections</label>
+        <textarea 
+          id="review" 
+          rows="4" 
+          placeholder="What thoughts or ideas came up while reading?"
+          class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm transition resize-none"
+        ></textarea>
+      </div>
+
+      <!-- Submit Button -->
+      <button 
+        type="submit" 
+        id="submitBtn"
+        class="w-full bg-slate-900 text-white font-medium py-3.5 rounded-xl text-sm shadow-md active:scale-[0.98] transition flex items-center justify-center gap-2"
+      >
+        <span id="btnText">Save to Google Sheets</span>
+        <svg id="btnSpinner" class="hidden animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" fill="none">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+        </svg>
+      </button>
+
+    </form>
+  </main>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center p-5 z-50">
+    <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-xl space-y-4">
+      <div class="flex justify-between items-center">
+        <h2 class="text-lg font-bold text-slate-900">Endpoint Settings</h2>
+        <button id="closeSettingsBtn" class="text-slate-400 hover:text-slate-600 text-sm">✕</button>
+      </div>
+      <p class="text-xs text-slate-500">Stored only in your browser's local storage. Never committed to GitHub.</p>
+      
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 mb-1">GAS Web App URL</label>
+        <input 
+          type="url" 
+          id="gasUrlInput" 
+          placeholder="https://script.google.com/macros/s/.../exec"
+          class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-slate-900"
+        >
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 mb-1">Secret Token</label>
+        <input 
+          type="password" 
+          id="tokenInput" 
+          placeholder="Matches SECRET_TOKEN in Apps Script"
+          class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-slate-900"
+        >
+      </div>
+
+      <button id="saveSettingsBtn" class="w-full bg-slate-900 text-white font-medium py-3 rounded-xl text-xs shadow-sm">
+        Save Locally
+      </button>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 px-5 py-3 rounded-full text-xs font-semibold text-white opacity-0 transition-opacity pointer-events-none duration-300"></div>
+
+  <script>
+    const form = document.getElementById("bookForm");
+    const readDateInput = document.getElementById("readDate");
+    const urlInput = document.getElementById("url");
+    const pasteBtn = document.getElementById("pasteBtn");
+    const submitBtn = document.getElementById("submitBtn");
+    const btnText = document.getElementById("btnText");
+    const btnSpinner = document.getElementById("btnSpinner");
+    const toast = document.getElementById("toast");
+
+    const settingsModal = document.getElementById("settingsModal");
+    const openSettingsBtn = document.getElementById("openSettingsBtn");
+    const closeSettingsBtn = document.getElementById("closeSettingsBtn");
+    const saveSettingsBtn = document.getElementById("saveSettingsBtn");
+    const gasUrlInput = document.getElementById("gasUrlInput");
+    const tokenInput = document.getElementById("tokenInput");
+
+    // Initialize with today's date in YYYY-MM-DD
+    const setTodayAsDefault = () => {
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, "0");
+      const dd = String(today.getDate()).padStart(2, "0");
+      readDateInput.value = `${yyyy}-${mm}-${dd}`;
+    };
+    setTodayAsDefault();
+
+    // Load initial settings
+    gasUrlInput.value = localStorage.getItem("BOOK_LOG_GAS_URL") || "";
+    tokenInput.value = localStorage.getItem("BOOK_LOG_TOKEN") || "";
+
+    if (!gasUrlInput.value) {
+      settingsModal.classList.remove("hidden");
+      settingsModal.classList.add("flex");
+    }
+
+    // iOS clipboard paste convenience button
+    pasteBtn.addEventListener("click", async () => {
+      try {
+        const text = await navigator.clipboard.readText();
+        if (text && text.startsWith("http")) {
+          urlInput.value = text.trim();
+          showToast("URL pasted from clipboard!", "bg-slate-800");
+        } else {
+          showToast("Clipboard does not contain a valid URL.", "bg-amber-600");
+        }
+      } catch (err) {
+        urlInput.focus();
+        showToast("Please paste manually into the input box.", "bg-slate-700");
+      }
+    });
+
+    openSettingsBtn.addEventListener("click", () => {
+      settingsModal.classList.remove("hidden");
+      settingsModal.classList.add("flex");
+    });
+
+    closeSettingsBtn.addEventListener("click", () => {
+      settingsModal.classList.add("hidden");
+      settingsModal.classList.remove("flex");
+    });
+
+    saveSettingsBtn.addEventListener("click", () => {
+      localStorage.setItem("BOOK_LOG_GAS_URL", gasUrlInput.value.trim());
+      localStorage.setItem("BOOK_LOG_TOKEN", tokenInput.value.trim());
+      settingsModal.classList.add("hidden");
+      settingsModal.classList.remove("flex");
+      showToast("Settings saved on this device!", "bg-slate-800");
+    });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const gasUrl = localStorage.getItem("BOOK_LOG_GAS_URL");
+      const token = localStorage.getItem("BOOK_LOG_TOKEN");
+
+      if (!gasUrl) {
+        showToast("Please configure your GAS URL in ⚙️ Settings first.", "bg-amber-600");
+        settingsModal.classList.remove("hidden");
+        settingsModal.classList.add("flex");
+        return;
+      }
+
+      const payload = {
+        date: readDateInput.value,
+        url: urlInput.value.trim(),
+        quote: document.getElementById("quote").value.trim(),
+        review: document.getElementById("review").value.trim(),
+        token: token
+      };
+
+      submitBtn.disabled = true;
+      btnText.textContent = "Parsing & Saving...";
+      btnSpinner.classList.remove("hidden");
+
+      try {
+        await fetch(gasUrl, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+
+        showToast("Book archived successfully!", "bg-emerald-600");
+        form.reset();
+        setTodayAsDefault(); // Reset date back to today after submission
+      } catch (err) {
+        showToast("Failed to save book record.", "bg-rose-600");
+      } finally {
+        submitBtn.disabled = false;
+        btnText.textContent = "Save to Google Sheets";
+        btnSpinner.classList.add("hidden");
+      }
+    });
+
+    function showToast(message, bgColor) {
+      toast.textContent = message;
+      toast.className = `fixed bottom-6 left-1/2 -translate-x-1/2 px-5 py-3 rounded-full text-xs font-semibold text-white shadow-lg duration-300 ${bgColor} opacity-100`;
+      setTimeout(() => {
+        toast.classList.remove("opacity-100");
+        toast.classList.add("opacity-0");
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
