@@ -33,12 +33,13 @@ function doPost(e) {
 
     const imageFormula = bookInfo.image ? `=IMAGE("${bookInfo.image}")` : "";
 
-    // Columns from B: [Date, Cover, Title, Author, Quote, Review]
+    // Columns from B: [Date, Cover, Title, Author, Publisher, Quote, Review]
     const rowData = [
       recordDate,
       imageFormula,
       bookInfo.title,
       bookInfo.author,
+      bookInfo.publisher,
       quote,
       review
     ];
@@ -75,6 +76,7 @@ function fetchBookMetaFromUrl(targetUrl) {
 
     let title = "";
     let author = "";
+    let publisher = "";
     let image = "";
 
     // 1. Try Schema.org JSON-LD (<script type="application/ld+json">) first
@@ -100,6 +102,16 @@ function fetchBookMetaFromUrl(targetUrl) {
               author = String(bookObj.author);
             }
           }
+          if (bookObj.publisher) {
+            if (Array.isArray(bookObj.publisher)) {
+              publisher = bookObj.publisher.map(p => p.name || p).join(", ");
+            } else if (typeof bookObj.publisher === "object") {
+              publisher = bookObj.publisher.name || "";
+            } else {
+              publisher = String(bookObj.publisher);
+            }
+          }
+          
           break;
         }
       } catch (jsonErr) {
@@ -122,6 +134,12 @@ function fetchBookMetaFromUrl(targetUrl) {
                        || html.match(/<meta[^>]*content=["']([^"']*)["'][^>]*(?:property|name)=["'](?:og:author|author)["']/i);
       if (authorMatch) author = authorMatch[1].trim();
     }
+    
+    if (!publisher) {
+      const publisherMatch = html.match(/<meta[^>]*(?:property|name)=["'](?:og:publisher|book:publisher|publisher)["'][^>]*content=["']([^"']*)["']/i)
+                          || html.match(/<meta[^>]*content=["']([^"']*)["'][^>]*(?:property|name)=["'](?:og:publisher|book:publisher|publisher)["']/i);
+      if (publisherMatch) publisher = publisherMatch[1].trim();
+    }
 
     if (!image) {
       const imageMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']*)["']/i)
@@ -132,10 +150,12 @@ function fetchBookMetaFromUrl(targetUrl) {
     // Decode common HTML entities
     title = decodeEntities(title);
     author = decodeEntities(author);
+    publisher = decodeEntities(publisher);
 
     return {
       title: title || "Unknown Title",
       author: author || "Unknown Author",
+      publisher: publisher || "",
       image: image || ""
     };
   } catch (e) {
@@ -143,6 +163,7 @@ function fetchBookMetaFromUrl(targetUrl) {
     return {
       title: "URL Parsing Failed",
       author: "",
+      publisher: "",
       image: ""
     };
   }
